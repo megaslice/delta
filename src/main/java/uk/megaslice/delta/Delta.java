@@ -10,20 +10,51 @@ import static java.util.Collections.unmodifiableMap;
 
 @ToString
 @EqualsAndHashCode
-public class Delta<T, K> {
+public final class Delta<T, K> {
 
     private final Map<K, Operation<T>> operations;
 
     private Delta(Map<K, Operation<T>> operations) {
-        this.operations = operations;
+        this.operations = unmodifiableMap(operations);
     }
 
     public Map<K, Operation<T>> operations() {
         return operations;
     }
 
+    public Optional<Operation<T>> get(K key) {
+        return Optional.ofNullable(operations.get(key));
+    }
+
     public boolean isEmpty() {
         return operations.isEmpty();
+    }
+
+    public Delta<T, K> combine(Delta<T, K> other) {
+        return combine(other, Equivalence.defaultEquivalence());
+    }
+
+    public Delta<T, K> combine(Delta<T, K> other, Equivalence<T> equivalence) {
+        Map<K, Operation<T>> combined = new HashMap<>(this.operations);
+
+        for (Map.Entry<K, Operation<T>> entry : other.operations.entrySet()) {
+            K key = entry.getKey();
+            Operation<T> left = combined.get(key);
+            Operation<T> right = entry.getValue();
+
+            if (left == null) {
+                combined.put(key, right);
+            } else {
+                Optional<Operation<T>> combinedOp = left.combine(right, equivalence);
+                if (combinedOp.isPresent()) {
+                    combined.put(key, combinedOp.get());
+                } else {
+                    combined.remove(key);
+                }
+            }
+        }
+
+        return new Delta<>(combined);
     }
 
     public static <T, K> Delta<T, K> empty() {
@@ -80,6 +111,6 @@ public class Delta<T, K> {
             }
         }
 
-        return new Delta<>(unmodifiableMap(operations));
+        return new Delta<>(operations);
     }
 }

@@ -11,9 +11,14 @@ import static java.util.stream.Collectors.toList;
 
 public class Generators {
 
+    public static Stream<Delta<Item, String>> genDelta() {
+        return genScenario()
+                .map(scenario -> Delta.diff(scenario.before(), scenario.after(), Item.naturalKey))
+                .limit(STREAM_SIZE);
+    }
+
     public static Stream<Scenario> genScenario() {
         return Stream.generate(() -> {
-            Random random = new Random();
             Scenario scenario = new Scenario();
 
             scenario.added = genItems().findFirst().orElse(emptyList());

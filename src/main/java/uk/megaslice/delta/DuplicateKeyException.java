@@ -1,8 +1,8 @@
 package uk.megaslice.delta;
 
-public class DuplicateKeyException extends RuntimeException {
+public final class DuplicateKeyException extends RuntimeException {
 
-    public DuplicateKeyException(String message) {
+    DuplicateKeyException(String message) {
         super(message);
     }
 }
