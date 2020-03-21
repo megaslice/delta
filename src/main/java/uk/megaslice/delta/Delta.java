@@ -4,6 +4,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
@@ -28,6 +29,42 @@ public final class Delta<T, K> {
 
     public boolean isEmpty() {
         return operations.isEmpty();
+    }
+
+    public Collection<T> apply(Iterable<T> items, NaturalKey<T, K> naturalKey) {
+        Map<K, Operation<T>> remainingOps = new HashMap<>(operations);
+        Map<K, T> itemsByKey = new HashMap<>();
+
+        for (T item : items) {
+            K key = naturalKey.getNaturalKey(item);
+            if (itemsByKey.containsKey(key)) {
+                throw new DuplicateKeyException("Duplicate key in items: " + key);
+            }
+
+            Operation<T> op = operations.get(key);
+            if (op != null && op.type() == Operation.Type.UPDATE) {
+                @SuppressWarnings("OptionalGetWithoutIsPresent")
+                T updatedItem = op.newItem().get();
+                itemsByKey.put(key, updatedItem);
+                remainingOps.remove(key);
+            } else {
+                itemsByKey.put(key, item);
+            }
+
+        }
+
+        for (Map.Entry<K, Operation<T>> entry : remainingOps.entrySet()) {
+            Operation<T> op = entry.getValue();
+            if (op.newItem().isPresent()) {
+                if (itemsByKey.put(entry.getKey(), op.newItem().get()) != null) {
+                    throw new DuplicateKeyException("Duplicate key in operations: " + entry.getKey());
+                }
+            } else {
+                itemsByKey.remove(entry.getKey());
+            }
+        }
+
+        return itemsByKey.values();
     }
 
     public Delta<T, K> combine(Delta<T, K> other) {
