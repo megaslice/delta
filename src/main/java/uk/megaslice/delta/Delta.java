@@ -4,7 +4,6 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.util.*;
-import java.util.stream.Stream;
 
 import static java.util.Collections.emptyMap;
 import static java.util.Collections.unmodifiableMap;
@@ -42,9 +41,8 @@ public final class Delta<T, K> {
             }
 
             Operation<T> op = operations.get(key);
-            if (op != null && op.type() == Operation.Type.UPDATE) {
-                @SuppressWarnings("OptionalGetWithoutIsPresent")
-                T updatedItem = op.newItem().get();
+            if (op instanceof Operation.Update) {
+                T updatedItem = ((Operation.Update<T>) op).after;
                 itemsByKey.put(key, updatedItem);
                 remainingOps.remove(key);
             } else {
@@ -55,8 +53,9 @@ public final class Delta<T, K> {
 
         for (Map.Entry<K, Operation<T>> entry : remainingOps.entrySet()) {
             Operation<T> op = entry.getValue();
-            if (op.newItem().isPresent()) {
-                if (itemsByKey.put(entry.getKey(), op.newItem().get()) != null) {
+            if (op instanceof Operation.Insert) {
+                T itemToInsert = ((Operation.Insert<T>) op).item;
+                if (itemsByKey.put(entry.getKey(), itemToInsert) != null) {
                     throw new DuplicateKeyException("Duplicate key in operations: " + entry.getKey());
                 }
             } else {
@@ -133,11 +132,8 @@ public final class Delta<T, K> {
             Operation<T> existing = operations.get(key);
             if (existing == null) {
                 operations.put(key, Operation.insert(afterItem));
-            } else if (existing.newItem().isPresent()) {
-                throw new DuplicateKeyException("Duplicate key in 'after' items: " + key);
-            } else {
-                @SuppressWarnings("OptionalGetWithoutIsPresent")
-                T beforeItem = existing.oldItem().get();
+            } else if (existing instanceof Operation.Delete) {
+                T beforeItem = ((Operation.Delete<T>) existing).item;
 
                 if (equivalence.isEquivalent(beforeItem, afterItem)) {
                     operations.remove(key);
@@ -145,6 +141,8 @@ public final class Delta<T, K> {
                 } else {
                     operations.put(key, Operation.update(beforeItem, afterItem));
                 }
+            } else {
+                throw new DuplicateKeyException("Duplicate key in 'after' items: " + key);
             }
         }
 

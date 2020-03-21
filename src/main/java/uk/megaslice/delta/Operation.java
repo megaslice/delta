@@ -49,8 +49,8 @@ public abstract class Operation<T> {
 
     @ToString
     @EqualsAndHashCode(callSuper=false)
-    private static class Insert<T> extends Operation<T> {
-        private final T item;
+    static class Insert<T> extends Operation<T> {
+        final T item;
 
         private Insert(T item) {
             this.item = item;
@@ -82,9 +82,9 @@ public abstract class Operation<T> {
 
     @ToString
     @EqualsAndHashCode(callSuper=false)
-    private static class Update<T> extends Operation<T> {
-        private final T before;
-        private final T after;
+    static class Update<T> extends Operation<T> {
+        final T before;
+        final T after;
 
         private Update(T before, T after) {
             this.before = before;
@@ -126,7 +126,7 @@ public abstract class Operation<T> {
     @ToString
     @EqualsAndHashCode(callSuper=false)
     static class Delete<T> extends Operation<T> {
-        private final T item;
+        final T item;
 
         private Delete(T item) {
             this.item = item;

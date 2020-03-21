@@ -42,7 +42,7 @@ class ApplyTests {
         Delta<Item, String> delta = Delta.diff(scenario.before(), scenario.after(), Item.naturalKey);
         List<Item> beforeWithDuplicate = new ArrayList<>(scenario.before());
         beforeWithDuplicate.add(beforeWithDuplicate.get(0));
-        shuffle(beforeWithDuplicate);
+        shuffle(beforeWithDuplicate, Generators.random);
 
         assertThrows(DuplicateKeyException.class, () -> delta.apply(beforeWithDuplicate, Item.naturalKey));
     }
