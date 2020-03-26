@@ -5,8 +5,7 @@ import lombok.ToString;
 
 import java.util.*;
 
-import static java.util.Collections.emptyMap;
-import static java.util.Collections.unmodifiableMap;
+import static java.util.Collections.*;
 
 @ToString
 @EqualsAndHashCode
@@ -39,18 +38,39 @@ public final class Delta<T, K> {
             if (itemsByKey.containsKey(key)) {
                 throw new DuplicateKeyException("Duplicate key in items: " + key);
             }
-
-            Operation<T> op = operations.get(key);
-            if (op instanceof Operation.Update) {
-                T updatedItem = ((Operation.Update<T>) op).after;
-                itemsByKey.put(key, updatedItem);
-                remainingOps.remove(key);
-            } else {
-                itemsByKey.put(key, item);
-            }
-
+            applyUpdateOrUnchanged(remainingOps, itemsByKey, item, key);
         }
 
+        applyInsertsAndDeletes(remainingOps, itemsByKey);
+
+        return unmodifiableCollection(itemsByKey.values());
+    }
+
+    public Map<K, T> apply(Map<K, T> items) {
+        Map<K, Operation<T>> remainingOps = new HashMap<>(operations);
+        Map<K, T> itemsByKey = new HashMap<>();
+
+        for (Map.Entry<K, T> entry : items.entrySet()) {
+            applyUpdateOrUnchanged(remainingOps, itemsByKey, entry.getValue(), entry.getKey());
+        }
+
+        applyInsertsAndDeletes(remainingOps, itemsByKey);
+
+        return unmodifiableMap(itemsByKey);
+    }
+
+    private void applyUpdateOrUnchanged(Map<K, Operation<T>> remainingOps, Map<K, T> itemsByKey, T item, K key) {
+        Operation<T> op = operations.get(key);
+        if (op instanceof Operation.Update) {
+            T updatedItem = ((Operation.Update<T>) op).after;
+            itemsByKey.put(key, updatedItem);
+            remainingOps.remove(key);
+        } else {
+            itemsByKey.put(key, item);
+        }
+    }
+
+    private void applyInsertsAndDeletes(Map<K, Operation<T>> remainingOps, Map<K, T> itemsByKey) {
         for (Map.Entry<K, Operation<T>> entry : remainingOps.entrySet()) {
             Operation<T> op = entry.getValue();
             if (op instanceof Operation.Insert) {
@@ -62,8 +82,6 @@ public final class Delta<T, K> {
                 itemsByKey.remove(entry.getKey());
             }
         }
-
-        return itemsByKey.values();
     }
 
     public Delta<T, K> combine(Delta<T, K> other) {
@@ -109,7 +127,7 @@ public final class Delta<T, K> {
                                           NaturalKey<T, K> naturalKey,
                                           Equivalence<T> equivalence) {
         if (before == after) {
-            return new Delta<>(emptyMap());
+            return empty();
         }
 
         Map<K, Operation<T>> operations = new HashMap<>();
@@ -143,6 +161,42 @@ public final class Delta<T, K> {
                 }
             } else {
                 throw new DuplicateKeyException("Duplicate key in 'after' items: " + key);
+            }
+        }
+
+        return new Delta<>(operations);
+    }
+
+    public static <T, K> Delta<T, K> diff(Map<K, T> before,
+                                          Map<K, T> after) {
+
+        return diff(before, after, Equivalence.defaultEquivalence());
+    }
+
+    public static <T, K> Delta<T, K> diff(Map<K, T> before,
+                                          Map<K, T> after,
+                                          Equivalence<T> equivalence) {
+        if (before == after) {
+            return Delta.empty();
+        }
+
+        Map<K, Operation<T>> operations = new HashMap<>();
+
+        for (Map.Entry<K, T> entry : before.entrySet()) {
+            operations.put(entry.getKey(), Operation.delete(entry.getValue()));
+        }
+
+        for (Map.Entry<K, T> entry : after.entrySet()) {
+            K key = entry.getKey();
+            T afterItem = entry.getValue();
+
+            T beforeItem = before.get(key);
+            if (beforeItem == null) {
+                operations.put(key, Operation.insert(afterItem));
+            } else if (equivalence.isEquivalent(beforeItem, afterItem)) {
+                operations.remove(key);
+            } else {
+                operations.put(key, Operation.update(beforeItem, afterItem));
             }
         }
 

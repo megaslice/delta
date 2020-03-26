@@ -4,10 +4,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static java.util.Collections.emptyList;
 import static java.util.Collections.shuffle;
@@ -17,9 +14,18 @@ import static org.junit.jupiter.api.Assertions.*;
 
 class DiffTests {
 
+    private Delta<Item, String> diff(Collection<Item> before, Collection<Item> after) {
+        Delta<Item, String> delta = Delta.diff(before, after, Item.naturalKey);
+        Delta<Item, String> deltaFromMap = Delta.diff(Item.toMap(before), Item.toMap(after));
+
+        assertEquals(delta, deltaFromMap);
+
+        return delta;
+    }
+
     @Test
     void emptyInput() {
-        Delta<Item, String> delta = Delta.diff(emptyList(), emptyList(), Item.naturalKey);
+        Delta<Item, String> delta = diff(emptyList(), emptyList());
 
         assertEquals(Delta.<Item, String>empty(), delta);
         assertTrue(delta.isEmpty());
@@ -33,7 +39,7 @@ class DiffTests {
         shuffle(before, Generators.random);
         shuffle(after, Generators.random);
 
-        Delta<Item, String> delta = Delta.diff(before, after, Item.naturalKey);
+        Delta<Item, String> delta = diff(before, after);
 
         assertEquals(Delta.<Item, String>empty(), delta);
         assertTrue(delta.isEmpty());
@@ -42,8 +48,11 @@ class DiffTests {
     @ParameterizedTest
     @MethodSource("uk.megaslice.delta.Generators#genItems")
     void sameInputReference(List<Item> items) {
+        Map<String, Item> itemMap = Item.toMap(items);
         Delta<Item, String> delta = Delta.diff(items, items, Item.naturalKey);
+        Delta<Item, String> deltaFromMap = Delta.diff(itemMap, itemMap);
 
+        assertEquals(delta, deltaFromMap);
         assertEquals(Delta.<Item, String>empty(), delta);
         assertTrue(delta.isEmpty());
     }
@@ -51,7 +60,7 @@ class DiffTests {
     @ParameterizedTest
     @MethodSource("uk.megaslice.delta.Generators#genNonEmptyItems")
     void emptyBeforeNonEmptyAfter(List<Item> items) {
-        Delta<Item, String> delta = Delta.diff(emptyList(), items, Item.naturalKey);
+        Delta<Item, String> delta = diff(emptyList(), items);
 
         assertTrue(delta.operations().values().stream().allMatch(op -> op.type() == Operation.Type.INSERT));
     }
@@ -59,7 +68,7 @@ class DiffTests {
     @ParameterizedTest
     @MethodSource("uk.megaslice.delta.Generators#genNonEmptyItems")
     void nonEmptyBeforeEmptyAfter(List<Item> items) {
-        Delta<Item, String> delta = Delta.diff(items, emptyList(), Item.naturalKey);
+        Delta<Item, String> delta = diff(items, emptyList());
 
         assertTrue(delta.operations().values().stream().allMatch(op -> op.type() == Operation.Type.DELETE));
     }
@@ -67,7 +76,7 @@ class DiffTests {
     @ParameterizedTest
     @MethodSource("uk.megaslice.delta.Generators#genScenario")
     void addedItemsAndChangedKeys(Scenario scenario) {
-        Delta<Item, String> delta = Delta.diff(scenario.before(), scenario.after(), Item.naturalKey);
+        Delta<Item, String> delta = diff(scenario.before(), scenario.after());
 
         Set<Operation<Item>> expectedInserts = concat(scenario.added.stream(), scenario.afterKeyChanged.stream())
                 .map(Operation::insert)
@@ -83,7 +92,7 @@ class DiffTests {
     @ParameterizedTest
     @MethodSource("uk.megaslice.delta.Generators#genScenario")
     void changedValues(Scenario scenario) {
-        Delta<Item, String> delta = Delta.diff(scenario.before(), scenario.after(), Item.naturalKey);
+        Delta<Item, String> delta = diff(scenario.before(), scenario.after());
 
         Set<Operation<Item>> expectedUpdates = new HashSet<>();
         for (int i = 0; i < scenario.beforeValueChanged.size(); i++) {
@@ -102,7 +111,7 @@ class DiffTests {
     @ParameterizedTest
     @MethodSource("uk.megaslice.delta.Generators#genScenario")
     void unchangedItems(Scenario scenario) {
-        Delta<Item, String> delta = Delta.diff(scenario.before(), scenario.after(), Item.naturalKey);
+        Delta<Item, String> delta = diff(scenario.before(), scenario.after());
 
         Set<Item> unchanged = new HashSet<>(scenario.unchanged);
 
@@ -114,7 +123,7 @@ class DiffTests {
     @ParameterizedTest
     @MethodSource("uk.megaslice.delta.Generators#genScenario")
     void removedItemsAndChangedKeys(Scenario scenario) {
-        Delta<Item, String> delta = Delta.diff(scenario.before(), scenario.after(), Item.naturalKey);
+        Delta<Item, String> delta = diff(scenario.before(), scenario.after());
 
         Set<Operation<Item>> expectedDeletes = concat(scenario.removed.stream(), scenario.beforeKeyChanged.stream())
                 .map(Operation::delete)
