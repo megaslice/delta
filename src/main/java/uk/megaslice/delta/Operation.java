@@ -10,7 +10,7 @@ public abstract class Operation<T> {
 
     private Operation() {}
 
-    enum Type {
+    public enum Type {
         INSERT, UPDATE, DELETE
     }
 
