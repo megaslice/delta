@@ -34,6 +34,33 @@ class ApplyTests {
 
     @ParameterizedTest
     @MethodSource("uk.megaslice.delta.Generators#genItems")
+    void nullInItems(List<Item> items) {
+        items.add(null);
+        shuffle(items, Generators.random);
+
+        assertThrows(NullPointerException.class, () -> Delta.<Item, String>empty().apply(items, Item.naturalKey));
+    }
+
+    @ParameterizedTest
+    @MethodSource("uk.megaslice.delta.Generators#genItems")
+    void nullValueInItemsMap(List<Item> items) {
+        Map<String, Item> itemsMap = Item.toMap(items);
+        itemsMap.put("", null);
+
+        assertThrows(NullPointerException.class, () -> Delta.<Item, String>empty().apply(itemsMap));
+    }
+
+    @ParameterizedTest
+    @MethodSource("uk.megaslice.delta.Generators#genItems")
+    void nullKeyInItemsMap(List<Item> items) {
+        Map<String, Item> itemsMap = Item.toMap(items);
+        itemsMap.put(null, Generators.genItem());
+
+        assertThrows(NullPointerException.class, () -> Delta.<Item, String>empty().apply(itemsMap));
+    }
+
+    @ParameterizedTest
+    @MethodSource("uk.megaslice.delta.Generators#genItems")
     void emptyDelta(List<Item> items) {
         Collection<Item> result = apply(Delta.empty(), items);
 

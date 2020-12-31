@@ -9,7 +9,6 @@ import java.util.*;
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
-import static java.util.stream.Stream.empty;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DiffTests {
@@ -49,6 +48,60 @@ class DiffTests {
     void nullEquivalence() {
         assertThrows(NullPointerException.class, () -> Delta.diff(emptyList(), emptyList(), Item.naturalKey, null));
         assertThrows(NullPointerException.class, () -> Delta.diff(emptyMap(), emptyMap(), null));
+    }
+
+    @ParameterizedTest
+    @MethodSource("uk.megaslice.delta.Generators#genItems")
+    void nullInBeforeItems(List<Item> beforeItems) {
+        beforeItems.add(null);
+        shuffle(beforeItems, Generators.random);
+
+        assertThrows(NullPointerException.class, () -> Delta.diff(beforeItems, emptyList(), Item.naturalKey));
+    }
+
+    @ParameterizedTest
+    @MethodSource("uk.megaslice.delta.Generators#genItems")
+    void nullValueInBeforeItemsMap(List<Item> items) {
+        Map<String, Item> beforeItems = Item.toMap(items);
+        beforeItems.put("", null);
+
+        assertThrows(NullPointerException.class, () -> Delta.diff(beforeItems, emptyMap()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("uk.megaslice.delta.Generators#genItems")
+    void nullKeyInBeforeItemsMap(List<Item> items) {
+        Map<String, Item> beforeItems = Item.toMap(items);
+        beforeItems.put(null, Generators.genItem());
+
+        assertThrows(NullPointerException.class, () -> Delta.diff(beforeItems, emptyMap()));
+    }
+
+    @ParameterizedTest
+    @MethodSource("uk.megaslice.delta.Generators#genItems")
+    void nullInAfterItems(List<Item> afterItems) {
+        afterItems.add(null);
+        shuffle(afterItems, Generators.random);
+
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyList(), afterItems, Item.naturalKey));
+    }
+
+    @ParameterizedTest
+    @MethodSource("uk.megaslice.delta.Generators#genItems")
+    void nullValueInAfterItemsMap(List<Item> items) {
+        Map<String, Item> afterItems = Item.toMap(items);
+        afterItems.put("", null);
+
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyMap(), afterItems));
+    }
+
+    @ParameterizedTest
+    @MethodSource("uk.megaslice.delta.Generators#genItems")
+    void nullKeyInAfterItemsMap(List<Item> items) {
+        Map<String, Item> afterItems = Item.toMap(items);
+        afterItems.put(null, Generators.genItem());
+
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyMap(), afterItems));
     }
 
     @Test

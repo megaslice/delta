@@ -39,7 +39,7 @@ public final class Delta<T, K> {
         Map<K, T> itemsByKey = new HashMap<>();
 
         for (T item : items) {
-            K key = naturalKey.getNaturalKey(item);
+            K key = keyOf(item, naturalKey);
             if (itemsByKey.containsKey(key)) {
                 throw new DuplicateKeyException("Duplicate key in items: " + key);
             }
@@ -58,7 +58,11 @@ public final class Delta<T, K> {
         Map<K, T> itemsByKey = new HashMap<>();
 
         for (Map.Entry<K, T> entry : items.entrySet()) {
-            applyUpdateOrUnchanged(remainingOps, itemsByKey, entry.getValue(), entry.getKey());
+            K key = entry.getKey();
+            T item = entry.getValue();
+            requireNonNullKeyAndItem(key, item, "");
+
+            applyUpdateOrUnchanged(remainingOps, itemsByKey, item, key);
         }
 
         applyInsertsAndDeletes(remainingOps, itemsByKey);
@@ -149,7 +153,7 @@ public final class Delta<T, K> {
         Map<K, Operation<T>> operations = new HashMap<>();
 
         for (T beforeItem : before) {
-            K key = naturalKey.getNaturalKey(beforeItem);
+            K key = keyOf(beforeItem, naturalKey);
             Object existing = operations.put(key, Operation.delete(beforeItem));
             if (existing != null) {
                 throw new DuplicateKeyException("Duplicate key in 'before' items: " + key);
@@ -158,7 +162,7 @@ public final class Delta<T, K> {
 
         Set<K> removed = new HashSet<>();
         for (T afterItem : after) {
-            K key = naturalKey.getNaturalKey(afterItem);
+            K key = keyOf(afterItem, naturalKey);
             if (removed.contains(key)) {
                 throw new DuplicateKeyException("Duplicate key in 'after' items: " + key);
             }
@@ -204,12 +208,17 @@ public final class Delta<T, K> {
         Map<K, Operation<T>> operations = new HashMap<>();
 
         for (Map.Entry<K, T> entry : before.entrySet()) {
-            operations.put(entry.getKey(), Operation.delete(entry.getValue()));
+            K key = entry.getKey();
+            T beforeItem = entry.getValue();
+            requireNonNullKeyAndItem(key, beforeItem, "before ");
+
+            operations.put(key, Operation.delete(beforeItem));
         }
 
         for (Map.Entry<K, T> entry : after.entrySet()) {
             K key = entry.getKey();
             T afterItem = entry.getValue();
+            requireNonNullKeyAndItem(key, afterItem, "after ");
 
             T beforeItem = before.get(key);
             if (beforeItem == null) {
@@ -222,5 +231,24 @@ public final class Delta<T, K> {
         }
 
         return new Delta<>(operations);
+    }
+
+    private static <T, K> K keyOf(T item, NaturalKey<T, K> naturalKey) {
+        Objects.requireNonNull(item, "item must not be null");
+
+        K key = naturalKey.getNaturalKey(item);
+        if (key == null) {
+            throw new NullPointerException("null key for item: " + item);
+        }
+        return key;
+    }
+
+    private static <T, K> void requireNonNullKeyAndItem(K key, T item, String label) {
+        if (key == null) {
+            throw new NullPointerException(label + "key must not be null");
+        }
+        if (item == null) {
+            throw new NullPointerException(label + "item must not be null");
+        }
     }
 }
