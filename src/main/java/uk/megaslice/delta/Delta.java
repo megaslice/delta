@@ -22,6 +22,8 @@ public final class Delta<T, K> {
     }
 
     public Optional<Operation<T>> get(K key) {
+        Objects.requireNonNull(key, "key must not be null");
+
         return Optional.ofNullable(operations.get(key));
     }
 
@@ -30,6 +32,9 @@ public final class Delta<T, K> {
     }
 
     public Collection<T> apply(Iterable<T> items, NaturalKey<T, K> naturalKey) {
+        Objects.requireNonNull(items, "items must not be null");
+        Objects.requireNonNull(naturalKey, "naturalKey must not be null");
+
         Map<K, Operation<T>> remainingOps = new HashMap<>(operations);
         Map<K, T> itemsByKey = new HashMap<>();
 
@@ -47,6 +52,8 @@ public final class Delta<T, K> {
     }
 
     public Map<K, T> apply(Map<K, T> items) {
+        Objects.requireNonNull(items, "items must not be null");
+
         Map<K, Operation<T>> remainingOps = new HashMap<>(operations);
         Map<K, T> itemsByKey = new HashMap<>();
 
@@ -89,6 +96,9 @@ public final class Delta<T, K> {
     }
 
     public Delta<T, K> combine(Delta<T, K> other, Equivalence<T> equivalence) {
+        Objects.requireNonNull(other, "other must not be null");
+        Objects.requireNonNull(equivalence, "equivalence must not be null");
+
         Map<K, Operation<T>> combined = new HashMap<>(this.operations);
 
         for (Map.Entry<K, Operation<T>> entry : other.operations.entrySet()) {
@@ -126,6 +136,12 @@ public final class Delta<T, K> {
                                           Iterable<T> after,
                                           NaturalKey<T, K> naturalKey,
                                           Equivalence<T> equivalence) {
+
+        Objects.requireNonNull(before, "before must not be null");
+        Objects.requireNonNull(after, "after must not be null");
+        Objects.requireNonNull(naturalKey, "naturalKey must not be null");
+        Objects.requireNonNull(equivalence, "equivalence must not be null");
+
         if (before == after) {
             return empty();
         }
@@ -176,6 +192,11 @@ public final class Delta<T, K> {
     public static <T, K> Delta<T, K> diff(Map<K, T> before,
                                           Map<K, T> after,
                                           Equivalence<T> equivalence) {
+
+        Objects.requireNonNull(before, "before must not be null");
+        Objects.requireNonNull(after, "after must not be null");
+        Objects.requireNonNull(equivalence, "equivalence must not be null");
+
         if (before == after) {
             return Delta.empty();
         }

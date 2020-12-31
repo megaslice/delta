@@ -1,5 +1,6 @@
 package uk.megaslice.delta;
 
+import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -18,6 +19,17 @@ class ApplyTests {
         assertEquals(Item.toMap(result), resultMap);
 
         return result;
+    }
+
+    @Test
+    void nullItems() {
+        assertThrows(NullPointerException.class, () -> Delta.empty().apply(null));
+        assertThrows(NullPointerException.class, () -> Delta.<Item, String>empty().apply(null, Item.naturalKey));
+    }
+
+    @Test
+    void nullNaturalKey() {
+        assertThrows(NullPointerException.class, () -> Delta.<Item, String>empty().apply(emptyList(), null));
     }
 
     @ParameterizedTest

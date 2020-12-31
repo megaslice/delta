@@ -16,6 +16,17 @@ import static uk.megaslice.delta.Generators.genItem;
 class CombineTests {
 
     @Test
+    void nullDelta() {
+        assertThrows(NullPointerException.class, () -> Delta.empty().combine(null));
+        assertThrows(NullPointerException.class, () -> Delta.empty().combine(null, Equivalence.defaultEquivalence()));
+    }
+
+    @Test
+    void nullEquivalence() {
+        assertThrows(NullPointerException.class, () -> Delta.empty().combine(Delta.empty(), null));
+    }
+
+    @Test
     void emptyWithEmpty() {
         assertEquals(Delta.empty(), Delta.empty().combine(Delta.empty()));
     }

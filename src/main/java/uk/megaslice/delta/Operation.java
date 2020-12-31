@@ -68,6 +68,9 @@ public abstract class Operation<T> {
 
         @Override
         public Optional<Operation<T>> combine(Operation<T> other, Equivalence<T> equivalence) {
+            Objects.requireNonNull(other, "other must not be null");
+            Objects.requireNonNull(equivalence, "equivalence must not be null");
+
             if (other instanceof Insert) {
                 throw new InvalidCombination(Type.INSERT, Type.INSERT);
             } else if (other instanceof Update) {
@@ -108,6 +111,9 @@ public abstract class Operation<T> {
 
         @Override
         public Optional<Operation<T>> combine(Operation<T> other, Equivalence<T> equivalence) {
+            Objects.requireNonNull(other, "other must not be null");
+            Objects.requireNonNull(equivalence, "equivalence must not be null");
+
             if (other instanceof Insert) {
                 throw new InvalidCombination(Type.UPDATE, Type.INSERT);
             } else if (other instanceof Update) {
@@ -144,6 +150,9 @@ public abstract class Operation<T> {
 
         @Override
         public Optional<Operation<T>> combine(Operation<T> other, Equivalence<T> equivalence) {
+            Objects.requireNonNull(other, "other must not be null");
+            Objects.requireNonNull(equivalence, "equivalence must not be null");
+
             if (other instanceof Insert) {
                 T otherItem = ((Insert<T>) other).item;
                 return equivalence.isEquivalent(item, otherItem) ?

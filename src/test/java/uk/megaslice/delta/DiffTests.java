@@ -6,10 +6,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 
 import java.util.*;
 
-import static java.util.Collections.emptyList;
-import static java.util.Collections.shuffle;
+import static java.util.Collections.*;
 import static java.util.stream.Collectors.toSet;
 import static java.util.stream.Stream.concat;
+import static java.util.stream.Stream.empty;
 import static org.junit.jupiter.api.Assertions.*;
 
 class DiffTests {
@@ -21,6 +21,34 @@ class DiffTests {
         assertEquals(delta, deltaFromMap);
 
         return delta;
+    }
+
+    @Test
+    void nullBefore() {
+        assertThrows(NullPointerException.class, () -> Delta.diff(null, emptyList(), Item.naturalKey, Equivalence.defaultEquivalence()));
+        assertThrows(NullPointerException.class, () -> Delta.diff(null, emptyList(), Item.naturalKey));
+        assertThrows(NullPointerException.class, () -> Delta.diff(null, emptyMap(), Equivalence.defaultEquivalence()));
+        assertThrows(NullPointerException.class, () -> Delta.diff(null, emptyMap()));
+    }
+
+    @Test
+    void nullAfter() {
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyList(), null, Item.naturalKey, Equivalence.defaultEquivalence()));
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyList(), null, Item.naturalKey));
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyMap(), null, Equivalence.defaultEquivalence()));
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyMap(), null));
+    }
+
+    @Test
+    void nullNaturalKey() {
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyList(), emptyList(), null, Equivalence.defaultEquivalence()));
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyList(), emptyList(), null));
+    }
+
+    @Test
+    void nullEquivalence() {
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyList(), emptyList(), Item.naturalKey, null));
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyMap(), emptyMap(), null));
     }
 
     @Test
