@@ -103,6 +103,13 @@ public final class Delta<T, K> {
         Objects.requireNonNull(other, "other must not be null");
         Objects.requireNonNull(equivalence, "equivalence must not be null");
 
+        if (isEmpty()) {
+            return other;
+        }
+        if (other.isEmpty()) {
+            return this;
+        }
+
         Map<K, Operation<T>> combined = new HashMap<>(this.operations);
 
         for (Map.Entry<K, Operation<T>> entry : other.operations.entrySet()) {
