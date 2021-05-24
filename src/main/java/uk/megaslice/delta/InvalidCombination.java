@@ -1,5 +1,11 @@
 package uk.megaslice.delta;
 
+/**
+ * {@link java.lang.RuntimeException} thrown when there is an attempt to combine operations that cannot be combined.
+ *
+ * @see Operation#combine(Operation)
+ * @see Operation#combine(Operation, Equivalence)
+ */
 public final class InvalidCombination extends RuntimeException {
 
     private final Operation.Type left;

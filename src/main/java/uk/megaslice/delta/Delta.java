@@ -7,6 +7,14 @@ import java.util.*;
 
 import static java.util.Collections.*;
 
+/**
+ * Represents changes to a dataset in terms of insert, update and delete operations.
+ *
+ * Deltas can be created using the {@code diff} method.
+ *
+ * @param <T>  the type of dataset items
+ * @param <K>  the type of the items' natural keys
+ */
 @ToString
 @EqualsAndHashCode
 public final class Delta<T, K> {
@@ -17,20 +25,48 @@ public final class Delta<T, K> {
         this.operations = unmodifiableMap(operations);
     }
 
+    /**
+     * Returns the insert, update and delete operations of this delta
+     * @return  the operations of this delta.
+     */
     public Map<K, Operation<T>> operations() {
         return operations;
     }
 
+    /**
+     * Retrieves an operation by the natural key of an item in the dataset.
+     *
+     * @param key  the natural key of an item affected by this delta
+     * @return  a {@link java.util.Optional} containing the operation for the given key, or an empty
+     *          {@link java.util.Optional} if no operation exists for the key
+     * @throws  NullPointerException if {@code key} is null
+     */
     public Optional<Operation<T>> get(K key) {
         Objects.requireNonNull(key, "key must not be null");
 
         return Optional.ofNullable(operations.get(key));
     }
 
+    /**
+     * Indicates whether this delta is empty.
+     *
+     * @return  true if this delta has no operations, false otherwise
+     */
     public boolean isEmpty() {
         return operations.isEmpty();
     }
 
+    /**
+     * Applies this delta's inserts, updates and deletes to another dataset.
+     *
+     * @param items       the dataset to which this delta will be applied
+     * @param naturalKey  a function to derive natural keys for dataset items
+     * @return  a new collection containing items with this delta applied
+     * @throws  DuplicateKeyException if {@code items} contains any items with the same natural key, or if
+     *          this delta contains an insert with the same key as an item in the dataset
+     * @throws  NullPointerException if {@code items} is null, any element in {@code items} is null,
+     *          {@code naturalKey} is null or if {@code naturalKey} produces a null for any item
+     */
     public Collection<T> apply(Iterable<T> items, NaturalKey<T, K> naturalKey) {
         Objects.requireNonNull(items, "items must not be null");
         Objects.requireNonNull(naturalKey, "naturalKey must not be null");
@@ -51,6 +87,14 @@ public final class Delta<T, K> {
         return unmodifiableCollection(itemsByKey.values());
     }
 
+    /**
+     * Applies this delta's inserts, updates and deletes to another dataset.
+     *
+     * @param items  the dataset to which this delta will be applied
+     * @return  a new collection containing items with this delta applied
+     * @throws  DuplicateKeyException if this delta contains an insert with the same key as an item in the dataset
+     * @throws  NullPointerException if {@code items} is null, or if any key or value in {@code items} is null
+     */
     public Map<K, T> apply(Map<K, T> items) {
         Objects.requireNonNull(items, "items must not be null");
 
@@ -95,10 +139,33 @@ public final class Delta<T, K> {
         }
     }
 
+    /**
+     * Combines this delta with another delta, using a default item equivalence function.
+     *
+     * Applying a combined delta of A and B is equivalent to applying A, then B.
+     *
+     * @param other  the other delta with which to combine
+     * @return  a new combined delta
+     * @throws  InvalidCombination if operations for the same natural key in the deltas cannot be combined
+     * @throws  NullPointerException if {@code other} is null
+     * @see Operation#combine(Operation)
+     */
     public Delta<T, K> combine(Delta<T, K> other) {
         return combine(other, Equivalence.defaultEquivalence());
     }
 
+    /**
+     * Combines this delta with another delta.
+     *
+     * Applying a combined delta of A and B is equivalent to applying A, then B.
+     *
+     * @param other        the other delta with which to combine
+     * @param equivalence  a function to determine whether two dataset items are equivalent
+     * @return  a new combined delta
+     * @throws  InvalidCombination if operations for the same natural key in the deltas cannot be combined
+     * @throws  NullPointerException if {@code other} is null or {@code equivalence} is null
+     * @see Operation#combine(Operation, Equivalence)
+     */
     public Delta<T, K> combine(Delta<T, K> other, Equivalence<T> equivalence) {
         Objects.requireNonNull(other, "other must not be null");
         Objects.requireNonNull(equivalence, "equivalence must not be null");
@@ -132,10 +199,32 @@ public final class Delta<T, K> {
         return new Delta<>(combined);
     }
 
+    /**
+     * Returns an empty delta.
+     *
+     * @param <T>  the type of items in the delta
+     * @param <K>  the type of the items' natural keys
+     * @return  an empty delta
+     */
     public static <T, K> Delta<T, K> empty() {
         return new Delta<>(emptyMap());
     }
 
+    /**
+     * Creates a delta from two datasets, using a default item equivalence function.
+     *
+     * @param before      the dataset before changes were made
+     * @param after       the dataset after changes were made
+     * @param naturalKey  a function to derive natural keys for dataset items in the datasets
+     * @param <T>  the type of dataset items
+     * @param <K>  the type of the items' natural keys
+     * @return  a delta representing the difference between the two datasets in terms of inserts, updates and deletes
+     * @throws  DuplicateKeyException if any items in {@code before} have the same natural key, or if any items
+     *          in {@code after} have the same natural key
+     * @throws  NullPointerException if {@code before} is null, {@code after} is null,
+     *          any element in {@code before} or {@code after} is null, {@code naturalKey} is null
+     *          or if {@code naturalKey} produces a null for any item
+     */
     public static <T, K> Delta<T, K> diff(Iterable<T> before,
                                           Iterable<T> after,
                                           NaturalKey<T, K> naturalKey) {
@@ -143,6 +232,22 @@ public final class Delta<T, K> {
         return diff(before, after, naturalKey, Equivalence.defaultEquivalence());
     }
 
+    /**
+     * Creates a delta from two datasets.
+     *
+     * @param before       the dataset before changes were made
+     * @param after        the dataset after changes were made
+     * @param naturalKey   a function to derive natural keys for dataset items in the datasets
+     * @param equivalence  a function to determine whether two dataset items are equivalent
+     * @param <T>  the type of dataset items
+     * @param <K>  the type of the items' natural keys
+     * @return  a delta representing the difference between the two datasets in terms of inserts, updates and deletes
+     * @throws  DuplicateKeyException if any items in {@code before} have the same natural key, or if any items
+     *          in {@code after} have the same natural key
+     * @throws  NullPointerException if {@code before} is null, {@code after} is null,
+     *          any element in {@code before} or {@code after} is null, {@code naturalKey} is null,
+     *          {@code naturalKey} produces a null for any item or if {@code equivalence} is null
+     */
     public static <T, K> Delta<T, K> diff(Iterable<T> before,
                                           Iterable<T> after,
                                           NaturalKey<T, K> naturalKey,
@@ -194,12 +299,35 @@ public final class Delta<T, K> {
         return new Delta<>(operations);
     }
 
+    /**
+     * Creates a delta from two datasets, using a default item equivalence function.
+     *
+     * @param before       the dataset before changes were made
+     * @param after        the dataset after changes were made
+     * @param <T>  the type of dataset items
+     * @param <K>  the type of the items' natural keys
+     * @return  a delta representing the difference between the two datasets in terms of inserts, updates and deletes
+     * @throws  NullPointerException if {@code before} is null, {@code after} is null,
+     *          or if any key or value in {@code before} or {@code after} is null
+     */
     public static <T, K> Delta<T, K> diff(Map<K, T> before,
                                           Map<K, T> after) {
 
         return diff(before, after, Equivalence.defaultEquivalence());
     }
 
+    /**
+     * Creates a delta from two datasets.
+     *
+     * @param before       the dataset before changes were made
+     * @param after        the dataset after changes were made
+     * @param equivalence  a function to determine whether two dataset items are equivalent
+     * @param <T>  the type of dataset items
+     * @param <K>  the type of the items' natural keys
+     * @return  a delta representing the difference between the two datasets in terms of inserts, updates and deletes
+     * @throws  NullPointerException if {@code before} is null, {@code after} is null,
+     *          any key or value in {@code before} or {@code after} is null, or if {@code equivalence} is null
+     */
     public static <T, K> Delta<T, K> diff(Map<K, T> before,
                                           Map<K, T> after,
                                           Equivalence<T> equivalence) {
