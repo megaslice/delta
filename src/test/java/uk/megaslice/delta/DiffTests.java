@@ -144,6 +144,9 @@ class DiffTests {
         Delta<Item, String> delta = diff(emptyList(), items);
 
         assertTrue(delta.operations().values().stream().allMatch(op -> op.type() == Operation.Type.INSERT));
+        assertEquals(delta.operations().size(), delta.inserts().size());
+        assertEquals(0, delta.updates().size());
+        assertEquals(0, delta.deletes().size());
     }
 
     @ParameterizedTest
@@ -152,6 +155,9 @@ class DiffTests {
         Delta<Item, String> delta = diff(items, emptyList());
 
         assertTrue(delta.operations().values().stream().allMatch(op -> op.type() == Operation.Type.DELETE));
+        assertEquals(delta.operations().size(), delta.deletes().size());
+        assertEquals(0, delta.inserts().size());
+        assertEquals(0, delta.updates().size());
     }
 
     @ParameterizedTest
@@ -163,9 +169,7 @@ class DiffTests {
                 .map(Operation::insert)
                 .collect(toSet());
 
-        Set<Operation<Item>> actualInserts = delta.operations().values().stream()
-                .filter(op -> op.type() == Operation.Type.INSERT)
-                .collect(toSet());
+        Set<Operation<Item>> actualInserts = new HashSet<>(delta.inserts());
 
         assertEquals(expectedInserts, actualInserts);
     }
@@ -182,9 +186,7 @@ class DiffTests {
             expectedUpdates.add(Operation.update(before, after));
         }
 
-        Set<Operation<Item>> actualUpdates = delta.operations().values().stream()
-                .filter(op -> op.type() == Operation.Type.UPDATE)
-                .collect(toSet());
+        Set<Operation<Item>> actualUpdates = new HashSet<>(delta.updates());
 
         assertEquals(expectedUpdates, actualUpdates);
     }
@@ -210,9 +212,7 @@ class DiffTests {
                 .map(Operation::delete)
                 .collect(toSet());
 
-        Set<Operation<Item>> actualDeletes = delta.operations().values().stream()
-                .filter(op -> op.type() == Operation.Type.DELETE)
-                .collect(toSet());
+        Set<Operation<Item>> actualDeletes = new HashSet<>(delta.deletes());
 
         assertEquals(expectedDeletes, actualDeletes);
     }

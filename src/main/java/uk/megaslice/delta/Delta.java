@@ -6,6 +6,7 @@ import lombok.ToString;
 import java.util.*;
 
 import static java.util.Collections.*;
+import static java.util.stream.Collectors.toList;
 
 /**
  * Represents changes to a dataset in terms of insert, update and delete operations.
@@ -26,11 +27,41 @@ public final class Delta<T, K> {
     }
 
     /**
-     * Returns the insert, update and delete operations of this delta
-     * @return  the operations of this delta.
+     * Returns the insert, update and delete operations of this delta.
+     * @return  the operations of this delta
      */
     public Map<K, Operation<T>> operations() {
         return operations;
+    }
+
+    /**
+     * Returns the insert operations of this delta.
+     * @return  the insert operations of this delta
+     */
+    public Collection<Operation<T>> inserts() {
+        return operations.values().stream()
+                .filter(o -> o.type() == Operation.Type.INSERT)
+                .collect(toList());
+    }
+
+    /**
+     * Returns the update operations of this delta.
+     * @return  the update operations of this delta
+     */
+    public Collection<Operation<T>> updates() {
+        return operations.values().stream()
+                .filter(o -> o.type() == Operation.Type.UPDATE)
+                .collect(toList());
+    }
+
+    /**
+     * Returns the delete operations of this delta.
+     * @return  the delete operations of this delta
+     */
+    public Collection<Operation<T>> deletes() {
+        return operations.values().stream()
+                .filter(o -> o.type() == Operation.Type.DELETE)
+                .collect(toList());
     }
 
     /**
@@ -207,8 +238,12 @@ public final class Delta<T, K> {
      * @return  an empty delta
      */
     public static <T, K> Delta<T, K> empty() {
-        return new Delta<>(emptyMap());
+        @SuppressWarnings("unchecked")
+        Delta<T, K> emptyDelta = (Delta<T, K>) EMPTY;
+        return emptyDelta;
     }
+
+    private static final Delta<Object, Object> EMPTY = new Delta<>(emptyMap());
 
     /**
      * Creates a delta from two datasets, using a default item equivalence function.
