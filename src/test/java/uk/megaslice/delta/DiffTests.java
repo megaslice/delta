@@ -145,6 +145,7 @@ class DiffTests {
 
         assertTrue(delta.operations().values().stream().allMatch(op -> op.type() == Operation.Type.INSERT));
         assertEquals(delta.operations().size(), delta.inserts().size());
+        assertEquals(new HashSet<>(items), new HashSet<>(delta.insertedItems()));
         assertEquals(0, delta.updates().size());
         assertEquals(0, delta.deletes().size());
     }
@@ -156,6 +157,7 @@ class DiffTests {
 
         assertTrue(delta.operations().values().stream().allMatch(op -> op.type() == Operation.Type.DELETE));
         assertEquals(delta.operations().size(), delta.deletes().size());
+        assertEquals(new HashSet<>(items), new HashSet<>(delta.deletedItems()));
         assertEquals(0, delta.inserts().size());
         assertEquals(0, delta.updates().size());
     }
@@ -168,10 +170,11 @@ class DiffTests {
         Set<Operation<Item>> expectedInserts = concat(scenario.added.stream(), scenario.afterKeyChanged.stream())
                 .map(Operation::insert)
                 .collect(toSet());
+        Set<Item> expectedInsertedItems = concat(scenario.added.stream(), scenario.afterKeyChanged.stream())
+                .collect(toSet());
 
-        Set<Operation<Item>> actualInserts = new HashSet<>(delta.inserts());
-
-        assertEquals(expectedInserts, actualInserts);
+        assertEquals(expectedInserts, new HashSet<>(delta.inserts()));
+        assertEquals(expectedInsertedItems, new HashSet<>(delta.insertedItems()));
     }
 
     @ParameterizedTest
@@ -180,15 +183,16 @@ class DiffTests {
         Delta<Item, String> delta = diff(scenario.before(), scenario.after());
 
         Set<Operation<Item>> expectedUpdates = new HashSet<>();
+        Set<Item> expectedUpdatedItems = new HashSet<>();
         for (int i = 0; i < scenario.beforeValueChanged.size(); i++) {
             Item before = scenario.beforeValueChanged.get(i);
             Item after = scenario.afterValueChanged.get(i);
             expectedUpdates.add(Operation.update(before, after));
+            expectedUpdatedItems.add(after);
         }
 
-        Set<Operation<Item>> actualUpdates = new HashSet<>(delta.updates());
-
-        assertEquals(expectedUpdates, actualUpdates);
+        assertEquals(expectedUpdates, new HashSet<>(delta.updates()));
+        assertEquals(expectedUpdatedItems, new HashSet<>(delta.updatedItems()));
     }
 
     @ParameterizedTest
@@ -211,10 +215,11 @@ class DiffTests {
         Set<Operation<Item>> expectedDeletes = concat(scenario.removed.stream(), scenario.beforeKeyChanged.stream())
                 .map(Operation::delete)
                 .collect(toSet());
+        Set<Item> expectedDeletedItems = concat(scenario.removed.stream(), scenario.beforeKeyChanged.stream())
+                .collect(toSet());
 
-        Set<Operation<Item>> actualDeletes = new HashSet<>(delta.deletes());
-
-        assertEquals(expectedDeletes, actualDeletes);
+        assertEquals(expectedDeletes, new HashSet<>(delta.deletes()));
+        assertEquals(expectedDeletedItems, new HashSet<>(delta.deletedItems()));
     }
 
     @ParameterizedTest

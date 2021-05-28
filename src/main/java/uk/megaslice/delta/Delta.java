@@ -4,6 +4,7 @@ import lombok.EqualsAndHashCode;
 import lombok.ToString;
 
 import java.util.*;
+import java.util.stream.Stream;
 
 import static java.util.Collections.*;
 import static java.util.stream.Collectors.toList;
@@ -45,6 +46,18 @@ public final class Delta<T, K> {
     }
 
     /**
+     * Returns the inserted items of this delta.
+     * @return  the inserted items of this delta
+     */
+    public Collection<T> insertedItems() {
+        return operations.values().stream()
+                .filter(o -> o.type() == Operation.Type.INSERT)
+                .map(Operation::newItem)
+                .flatMap(o -> o.map(Stream::of).orElseGet(Stream::empty))
+                .collect(toList());
+    }
+
+    /**
      * Returns the update operations of this delta.
      * @return  the update operations of this delta
      */
@@ -55,12 +68,36 @@ public final class Delta<T, K> {
     }
 
     /**
+     * Returns the updated items of this delta.
+     * @return  the updated items of this delta
+     */
+    public Collection<T> updatedItems() {
+        return operations.values().stream()
+                .filter(o -> o.type() == Operation.Type.UPDATE)
+                .map(Operation::newItem)
+                .flatMap(o -> o.map(Stream::of).orElseGet(Stream::empty))
+                .collect(toList());
+    }
+
+    /**
      * Returns the delete operations of this delta.
      * @return  the delete operations of this delta
      */
     public Collection<Operation<T>> deletes() {
         return operations.values().stream()
                 .filter(o -> o.type() == Operation.Type.DELETE)
+                .collect(toList());
+    }
+
+    /**
+     * Returns the deleted items of this delta.
+     * @return  the deleted items of this delta
+     */
+    public Collection<T> deletedItems() {
+        return operations.values().stream()
+                .filter(o -> o.type() == Operation.Type.DELETE)
+                .map(Operation::oldItem)
+                .flatMap(o -> o.map(Stream::of).orElseGet(Stream::empty))
                 .collect(toList());
     }
 
