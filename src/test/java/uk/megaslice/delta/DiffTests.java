@@ -46,8 +46,14 @@ class DiffTests {
 
     @Test
     void nullEquivalence() {
-        assertThrows(NullPointerException.class, () -> Delta.diff(emptyList(), emptyList(), Item.naturalKey, null));
-        assertThrows(NullPointerException.class, () -> Delta.diff(emptyMap(), emptyMap(), null));
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyList(), emptyList(), Item.naturalKey, (Equivalence<Item>) null));
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyMap(), emptyMap(), (Equivalence<Object>) null));
+    }
+
+    @Test
+    void nullEssence() {
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyList(), emptyList(), Item.naturalKey, (Essence<Item, Item>) null));
+        assertThrows(NullPointerException.class, () -> Delta.diff(emptyMap(), emptyMap(), (Essence<Object, Object>) null));
     }
 
     @ParameterizedTest

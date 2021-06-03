@@ -23,7 +23,12 @@ class CombineTests {
 
     @Test
     void nullEquivalence() {
-        assertThrows(NullPointerException.class, () -> Delta.empty().combine(Delta.empty(), null));
+        assertThrows(NullPointerException.class, () -> Delta.empty().combine(Delta.empty(), (Equivalence<Object>) null));
+    }
+
+    @Test
+    void nullEssence() {
+        assertThrows(NullPointerException.class, () -> Delta.empty().combine(Delta.empty(), (Essence<Object, Object>) null));
     }
 
     @Test

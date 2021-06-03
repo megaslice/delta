@@ -223,6 +223,24 @@ public final class Delta<T, K> {
     }
 
     /**
+     * Combines this delta with another delta, using an {@link Essence} function to distill items for comparison.
+     *
+     * Applying a combined delta of A and B is equivalent to applying A, then B.
+     *
+     * @param other    the other delta with which to combine
+     * @param essence  a function to distill items down to their essential features for equivalence comparisons
+     * @param <U>  the distilled type for equivalence comparisons
+     * @return  a new combined delta
+     * @throws  InvalidCombination if operations for the same natural key in the deltas cannot be combined
+     * @throws  NullPointerException if {@code other} is null
+     * @see Operation#combine(Operation)
+     */
+    public <U> Delta<T, K> combine(Delta<T, K> other, Essence<T, U> essence) {
+        Objects.requireNonNull(essence, "essence must not be null");
+        return combine(other, essence.asEquivalence());
+    }
+
+    /**
      * Combines this delta with another delta.
      *
      * Applying a combined delta of A and B is equivalent to applying A, then B.
@@ -302,6 +320,30 @@ public final class Delta<T, K> {
                                           NaturalKey<T, K> naturalKey) {
 
         return diff(before, after, naturalKey, Equivalence.defaultEquivalence());
+    }
+
+    /**
+     * Creates a delta from two datasets, using an {@link Essence} function to distill items for comparison.
+     *
+     * @param before      the dataset before changes were made
+     * @param after       the dataset after changes were made
+     * @param naturalKey  a function to derive natural keys for dataset items in the datasets
+     * @param essence     a function to distill items down to their essential features for equivalence comparisons
+     * @param <T>  the type of dataset items
+     * @param <U>  the distilled type for equivalence comparisons
+     * @param <K>  the type of the items' natural keys
+     * @return  a delta representing the difference between the two datasets in terms of inserts, updates and deletes
+     * @throws  DuplicateKeyException if any items in {@code before} have the same natural key, or if any items
+     *          in {@code after} have the same natural key
+     * @throws  NullPointerException if {@code before} is null, {@code after} is null,
+     *          any element in {@code before} or {@code after} is null, {@code naturalKey} is null
+     *          or if {@code naturalKey} produces a null for any item
+     */
+    public static <T, U, K> Delta<T, K> diff(Iterable<T> before,
+                                             Iterable<T> after,
+                                             NaturalKey<T, K> naturalKey,
+                                             Essence<T, U> essence) {
+        return diff(before, after, naturalKey, essence.asEquivalence());
     }
 
     /**
@@ -386,6 +428,26 @@ public final class Delta<T, K> {
                                           Map<K, T> after) {
 
         return diff(before, after, Equivalence.defaultEquivalence());
+    }
+
+    /**
+     * Creates a delta from two datasets, using an {@link Essence} function to distill items for comparison.
+     *
+     * @param before   the dataset before changes were made
+     * @param after    the dataset after changes were made
+     * @param essence  a function to distill items down to their essential features for equivalence comparisons
+     * @param <T>  the type of dataset items
+     * @param <U>  the distilled type for equivalence comparisons
+     * @param <K>  the type of the items' natural keys
+     * @return  a delta representing the difference between the two datasets in terms of inserts, updates and deletes
+     * @throws  NullPointerException if {@code before} is null, {@code after} is null,
+     *          or if any key or value in {@code before} or {@code after} is null
+     */
+    public static <T, U, K> Delta<T, K> diff(Map<K, T> before,
+                                          Map<K, T> after,
+                                          Essence<T, U> essence) {
+        Objects.requireNonNull(essence, "essence must not be null");
+        return diff(before, after, essence.asEquivalence());
     }
 
     /**
